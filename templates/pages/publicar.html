@@ -1,0 +1,91 @@
+{% extends 'components/base.html' %}
+{% load static %}
+{% load i18n %}
+{% block content %}
+
+{% include 'components/menu.html' %}
+
+<div class="container d-flex justify-content-center h-100 ">
+    <div class="vertical-center align-items-center">
+        <div class="card card-black">
+            <div class="card-body card-body-black">
+                {% include 'components/alertas.html' %}
+
+                <form action="{% url 'publicar' %}" method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="titulo"><b>Titulo:</b></label>
+                        <input type="text" name="titulo" id="titulo" class="form-control text-body">
+                    </div>
+                    <div class="form-group">
+                        <label for="descricao"><b>Descrição:</b></label>
+                        <textarea name="descricao" id="descricao" cols="30" rows="10" class="form-control text-body"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="audio"><b>Audio:</b></label>
+                        <input type="file" accept="audio/*" capture="microphone" name="audio" id="audio">
+                    </div>
+                    <div>
+                        <button type="button" id="btn">start</button>
+                    </div>
+                    <div class="form-group">
+                        <button class="btn btn-success" type="submit">Publicar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block script %}
+    <script>
+        $(function(){
+            let mediaRecorder
+
+            navigator
+            .mediaDevices
+            .getUserMedia({audio: true})
+            .then(stream => {
+                mediaRecorder = new MediaRecorder(stream)
+
+                let chucks = []
+
+                mediaRecorder.ondataavailable = data => {
+                    chucks.push(data.data)
+                    console.log("data\n")
+                    console.log(data)
+                }
+
+                mediaRecorder.onstop = () =>{
+                    const blob = new Blob(chucks, {type: 'audio/ogg; codec=opus'})
+                    const reader = new window.FileReader()
+                    reader.readAsDataURL(blob)
+                    reader.onloadend = () => {
+                        const input = document.getElementById('audio')
+                        input.src = reader.result
+                        input.readonly = true
+                        console.log(reader.result)
+                    }
+                }
+                
+            }, err => {
+                console.log(err)
+            })
+            $('#btn').click(function(){
+                if($(this).text() == 'Start'){
+                    mediaRecorder.start()
+                    $(this).text('Stop')
+                }else{
+                    mediaRecorder.stop()
+                    $(this).text('Start')
+                }
+
+                
+                //setTimeout(() => mediaRecorder.stop(), 3000)
+            })
+        })
+    </script>
+{% endblock script %}
+
+{% include 'components/footer.html' %}
+{% endblock %}
